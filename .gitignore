@@ -1,0 +1,18 @@
+ 
+# Python virtual environment
+.venv/
+venv/
+
+# PyCharm/IntelliJ project files
+.idea/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Other common ignores
+*.log
+*.env
+*.DS_Store  # macOS-specific

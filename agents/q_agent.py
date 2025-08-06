@@ -158,3 +158,8 @@ class QLearningAgent:
     def decay_epsilon(self, decay_rate=0.995, min_epsilon=0.01):
         """Gradually reduce exploration rate"""
         self.epsilon = max(min_epsilon, self.epsilon * decay_rate)
+
+    def set_player_char(self, char):
+        """Set the player's character and update opponent character"""
+        self.player_char = char
+        self.opponent_char = 'O' if char == 'X' else 'X'

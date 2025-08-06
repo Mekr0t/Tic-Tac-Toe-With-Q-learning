@@ -1,3 +1,4 @@
+import models.model_manager as mng
 from game.game_logic import Board
 from agents.q_agent import QLearningAgent
 
@@ -7,8 +8,7 @@ def play_vs_agent():
 
     # Load the trained agent
     agent = QLearningAgent(player_char='X')
-    if not agent.load_model('tic_tac_toe_model_perfect.pkl'):
-        print("No trained model found! Please run trainer.py first.")
+    if mng.load_model_for_agent(agent) is False:
         return
 
     print(f"Loaded trained agent with {agent.games_played} games of experience!")

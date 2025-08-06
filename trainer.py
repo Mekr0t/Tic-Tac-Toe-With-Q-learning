@@ -1,20 +1,21 @@
+import models.model_manager as mng
 from game.game_logic import Board
 from agents.q_agent import QLearningAgent
 from algorithms.minimax import MinimaxPlayer, ImperfectMinimaxPlayer
 from algorithms.random_player import RandomPlayer
 
-import models.model_manager as mng
-
-
-path = 'models//tic_tac_toe_model.pkl'
-
 
 def train_against_random(agent, num_games=10000, print_interval=1000):
-    print(f"Training {agent.player_char} agent against random player for {num_games} games...")
-
-    opponent = RandomPlayer(agent.opponent_char)
+    print(f"Training agent against random player for {num_games} games...")
 
     for game in range(num_games):
+        if game % 2 == 0:
+            agent.set_player_char('X')
+        else:
+            agent.set_player_char('O')
+
+        opponent = RandomPlayer(agent.opponent_char)
+
         board = Board()
         game_states = []
 
@@ -25,7 +26,6 @@ def train_against_random(agent, num_games=10000, print_interval=1000):
             if current_player == agent:
                 state_before = board.get_numeric_board().copy()
                 action = agent.make_move(board, training=True)
-
                 if action is not None:
                     game_states.append((state_before, action))
             else:
@@ -219,15 +219,9 @@ def main():
     agent = QLearningAgent(player_char='X', learning_rate=0.1, discount_factor=0.9, epsilon=0.3)
 
     if choice == '1':
-        """
-        if agent.load_model('tic_tac_toe_model.pkl'):
-            print("Loaded existing model. Continuing training...")
-        else:
-            print("Starting fresh training...")
-        """
-
-        train_against_random(agent, num_games=10000)
-        mng.save(agent)
+        mng.load_model_for_agent(agent)
+        train_against_random(agent, num_games=20000)
+        mng.save_model_from_agent(agent)
 
     elif choice == '2':
         print("Choose minimax difficulty:")
@@ -240,16 +234,14 @@ def main():
         difficulties = {'1': 'easy', '2': 'medium', '3': 'hard', '4': 'perfect'}
         difficulty = difficulties.get(diff_choice, 'medium')
 
+        mng.load_model_for_agent(agent)
         train_against_minimax(agent, difficulty=difficulty, num_games=10000)
-        agent.save_model(path)
+        mng.save_model_from_agent(agent)
 
     elif choice == '3':
-        if agent.load_model(path):
-            print("Evaluating loaded model...")
-            evaluate_agent_vs_all_opponents(agent, games_per_opponent=500)
-        else:
-            print("No model found to evaluate!")
-            return
+        print("Evaluating loaded model...")
+        mng.load_model_for_agent(agent)
+        evaluate_agent_vs_all_opponents(agent, games_per_opponent=500)
 
     else:
         print("Invalid choice!")

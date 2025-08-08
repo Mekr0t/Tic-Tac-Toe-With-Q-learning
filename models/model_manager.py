@@ -59,3 +59,58 @@ def load_model_for_agent(agent):
                 print(f"\nPlease enter a number between 0 and {len(model_files)}.")
         except ValueError:
             print("\nPlease enter a valid number.")
+
+
+def delete_model(model_name=None):
+
+    if not os.path.exists(MODEL_DIR):
+        print(f"\nModel directory '{MODEL_DIR}' does not exist.")
+        return
+
+    if model_name is not None:
+        full_path = os.path.join(MODEL_DIR, model_name)
+        if os.path.exists(full_path):
+            confirm = input(f"Are you sure you want to delete {model_name}? (y/n): ").lower()
+            if confirm == 'y':
+                try:
+                    os.remove(full_path)
+                    print(f"Deleted model: {model_name}")
+                except Exception as e:
+                    print(f"Error deleting model: {e}")
+            else:
+                print("Deletion canceled.")
+        else:
+            print(f"Model '{model_name}' not found.")
+    else:
+        model_files = [f for f in os.listdir(MODEL_DIR) if f.endswith('.pkl')]
+        if not model_files:
+            print(f"No model files found in '{MODEL_DIR}'.")
+            return
+
+        print("Available models:")
+        for i, file in enumerate(model_files, 1):
+            print(f"{i}. {file}")
+
+        while True:
+            try:
+                choice = int(input("Enter the number of the model to delete (0 to cancel): "))
+                if choice == 0:
+                    print("No model deleted.")
+                    return
+                elif 1 <= choice <= len(model_files):
+                    selected_file = model_files[choice - 1]
+                    full_path = os.path.join(MODEL_DIR, selected_file)
+                    confirm = input(f"Are you sure you want to delete {selected_file}? (y/n): ").lower()
+                    if confirm == 'y':
+                        try:
+                            os.remove(full_path)
+                            print(f"Deleted model: {selected_file}")
+                        except Exception as e:
+                            print(f"Error deleting model: {e}")
+                    else:
+                        print("Deletion canceled.")
+                    return
+                else:
+                    print(f"Please enter a number between 0 and {len(model_files)}.")
+            except ValueError:
+                print("Please enter a valid number.")

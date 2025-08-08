@@ -59,6 +59,14 @@ def train_self_play(agent1, agent2, num_games=5000, print_interval=500):
         game_states_1 = []
         game_states_2 = []
 
+        if game % 2 == 0:
+            agent1.set_player_char('X')
+            agent2.set_player_char('O')
+
+        else:
+            agent1.set_player_char('O')
+            agent2.set_player_char('X')
+
         current_agent = agent1 if agent1.player_char == 'X' else agent2
         other_agent = agent2 if current_agent == agent1 else agent1
 
@@ -92,8 +100,8 @@ def train_self_play(agent1, agent2, num_games=5000, print_interval=500):
         if (game + 1) % print_interval == 0:
             stats1 = agent1.get_stats()
             stats2 = agent2.get_stats()
-            print(f"Game {game + 1}: {agent1.player_char} Win Rate: {stats1['win_rate']:.3f}, "
-                  f"{agent2.player_char} Win Rate: {stats2['win_rate']:.3f}")
+            print(f"Game {game + 1}: First Agent Win Rate: {stats1['win_rate']:.3f}, "
+                  f"Second Agent Win Rate Win Rate: {stats2['win_rate']:.3f}")
 
 
 def train_against_minimax(agent, difficulty='medium', num_games=5000, print_interval=500):
@@ -212,11 +220,13 @@ def main():
     print("Q-Learning Tic-Tac-Toe Training")
     print("1. Train against random player")
     print("2. Train against specific minimax difficulty")
-    print("3. Evaluate existing model")
+    print("3. Train against self")
+    print("4. Evaluate existing model")
 
     choice = input("Choose training option (1-4): ").strip()
 
     agent = QLearningAgent(player_char='X', learning_rate=0.1, discount_factor=0.9, epsilon=0.3)
+    agent2 = QLearningAgent(player_char='O', learning_rate=0.1, discount_factor=0.9, epsilon=0.3)
 
     if choice == '1':
         mng.load_model_for_agent(agent)
@@ -239,6 +249,21 @@ def main():
         mng.save_model_from_agent(agent)
 
     elif choice == '3':
+        print("\nLoading model for first agent...")
+        mng.load_model_for_agent(agent)
+
+        print("\nLoading model for second agent...")
+        mng.load_model_for_agent(agent2)
+
+        train_self_play(agent, agent2, num_games=10000, print_interval=1000)
+
+        print("\nSaving model for first agent...")
+        mng.save_model_from_agent(agent)
+
+        print("\nSaving model for second agent...")
+        mng.save_model_from_agent(agent2)
+
+    elif choice == '4':
         print("Evaluating loaded model...")
         mng.load_model_for_agent(agent)
         evaluate_agent_vs_all_opponents(agent, games_per_opponent=500)

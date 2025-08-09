@@ -9,6 +9,7 @@ class MinimaxPlayer:
         self.difficulty = difficulty
 
         self.max_depth = {
+            'random': 0,
             'easy': 2,
             'medium': 5,
             'hard': 7,
@@ -143,6 +144,11 @@ class MinimaxPlayer:
             'win_rate': self.get_win_rate(),
             'difficulty': self.difficulty
         }
+
+    def set_player_char(self, char):
+        """Set the player's character and update opponent character"""
+        self.player_char = char
+        self.opponent_char = 'O' if char == 'X' else 'X'
 
 
 class ImperfectMinimaxPlayer(MinimaxPlayer):

@@ -1,4 +1,5 @@
 import models.model_manager as mng
+import random
 from game.game_logic import Board
 from agents.q_agent import QLearningAgent
 from algorithms.minimax import MinimaxPlayer, ImperfectMinimaxPlayer
@@ -105,20 +106,24 @@ def train_self_play(agent1, agent2, num_games=5000, print_interval=500):
 
 
 def train_against_minimax(agent, difficulty='medium', num_games=5000, print_interval=500):
-    print(f"Training {agent.player_char} agent against {difficulty} minimax for {num_games} games...")
+    print(f"Training agent against {difficulty} minimax for {num_games} games...")
 
     opponent = MinimaxPlayer('O' if agent.player_char == 'X' else 'X', difficulty=difficulty)
 
     for game in range(num_games):
+
+        if game % 2 == 0:
+            agent.set_player_char('X')
+            opponent.set_player_char('O')
+        else:
+            agent.set_player_char('O')
+            opponent.set_player_char('X')
+
         board = Board()
         game_states = []
 
-        if agent.player_char == 'X':
-            current_player = agent
-            other_player = opponent
-        else:
-            current_player = opponent
-            other_player = agent
+        current_player = agent if agent.player_char == 'X' else opponent
+        other_player = opponent if current_player == agent else agent
 
         while board.check_win() is None:
             if current_player == agent:
@@ -155,6 +160,78 @@ def train_against_minimax(agent, difficulty='medium', num_games=5000, print_inte
             opponent_stats = opponent.get_stats()
             print(f"Game {game + 1}: Agent Win Rate: {agent_stats['win_rate']:.3f}, "
                   f"Minimax Win Rate: {opponent_stats['win_rate']:.3f}, "
+                  f"Epsilon: {agent.epsilon:.3f}")
+
+
+def train_against_all(agent, num_games=5000, print_interval=500):
+    print(f"Training agent against random difficulty for {num_games} games...")
+
+    difficulties = ['random', 'easy', 'medium', 'hard', 'perfect']
+
+    minimax_wins = 0
+    minimax_draws = 0
+    minimax_losses = 0
+
+    for game in range(num_games):
+        difficulty = random.choice(difficulties)
+        opponent = MinimaxPlayer('O' if agent.player_char == 'X' else 'X', difficulty=difficulty)
+
+        if game % 2 == 0:
+            agent.set_player_char('X')
+            opponent.set_player_char('O')
+        else:
+            agent.set_player_char('O')
+            opponent.set_player_char('X')
+
+        board = Board()
+        game_states = []
+
+        current_player = agent if agent.player_char == 'X' else opponent
+        other_player = opponent if current_player == agent else agent
+
+        while board.check_win() is None:
+            if current_player == agent:
+                state_before = board.get_numeric_board().copy()
+                action = agent.make_move(board, training=True)
+                if action is not None:
+                    game_states.append((state_before, action))
+            else:
+                current_player.make_move(board)
+
+            current_player, other_player = other_player, current_player
+
+        game_result = board.check_win()
+        agent.update_stats(game_result)
+
+        if game_result == opponent.player_char:
+            minimax_wins += 1
+        elif game_result == 'Draw':
+            minimax_draws += 1
+        else:
+            minimax_losses += 1
+
+        minimax_games_played = game + 1
+        minimax_win_rate = minimax_wins / minimax_games_played if minimax_games_played > 0 else 0.0
+
+        final_reward = agent.get_reward(game_result)
+
+        for i, (state, action) in enumerate(reversed(game_states)):
+            reward = final_reward * (agent.discount_factor ** i)
+
+            if i == 0:
+                next_state = board.get_numeric_board()
+            else:
+                next_state = game_states[len(game_states) - i][0]
+
+            agent.update_q_value(state, action, reward, next_state)
+
+        if game % 100 == 0:
+            agent.decay_epsilon()
+
+        if (game + 1) % print_interval == 0:
+            agent_stats = agent.get_stats()
+            print(f"Game {game + 1}: Agent Win Rate: {agent_stats['win_rate']:.3f}, "
+                  f"Minimax Win Rate: {minimax_win_rate:.3f}, "
                   f"Epsilon: {agent.epsilon:.3f}")
 
 
@@ -195,8 +272,8 @@ def evaluate_agent_vs_all_opponents(agent, games_per_opponent=1000):
                 if current_player == agent:
                     agent.make_move(board, training=False)
                 else:
-                    if hasattr(other_player, 'make_move'):
-                        other_player.make_move(board)
+                    if hasattr(current_player, 'make_move'):
+                        current_player.make_move(board)
 
                 current_player, other_player = other_player, current_player
 
@@ -221,7 +298,9 @@ def main():
     print("1. Train against random player")
     print("2. Train against specific minimax difficulty")
     print("3. Train against self")
-    print("4. Evaluate existing model")
+    print("4. Train against all difficulties")
+    print("9. Evaluate existing model")
+    print("0. Exit")
 
     choice = input("Choose training option (1-4): ").strip()
 
@@ -245,7 +324,7 @@ def main():
         difficulty = difficulties.get(diff_choice, 'medium')
 
         mng.load_model_for_agent(agent)
-        train_against_minimax(agent, difficulty=difficulty, num_games=10000)
+        train_against_minimax(agent, difficulty=difficulty, num_games=5000)
         mng.save_model_from_agent(agent)
 
     elif choice == '3':
@@ -255,7 +334,7 @@ def main():
         print("\nLoading model for second agent...")
         mng.load_model_for_agent(agent2)
 
-        train_self_play(agent, agent2, num_games=10000, print_interval=1000)
+        train_self_play(agent, agent2, num_games=100000, print_interval=1000)
 
         print("\nSaving model for first agent...")
         mng.save_model_from_agent(agent)
@@ -263,10 +342,19 @@ def main():
         print("\nSaving model for second agent...")
         mng.save_model_from_agent(agent2)
 
-    elif choice == '4':
+    if choice == '4':
+        mng.load_model_for_agent(agent)
+        train_against_random(agent, num_games=50000)
+        mng.save_model_from_agent(agent)
+
+    elif choice == '9':
         print("Evaluating loaded model...")
         mng.load_model_for_agent(agent)
         evaluate_agent_vs_all_opponents(agent, games_per_opponent=500)
+
+    elif choice == '0':
+        print("Ending...")
+        return
 
     else:
         print("Invalid choice!")

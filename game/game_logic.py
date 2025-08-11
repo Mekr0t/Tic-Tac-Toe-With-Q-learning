@@ -19,7 +19,14 @@ class Board:
         print("-------------")
 
     def place_char(self, char: str, place: int):
-        self._board[place-1] = char.upper()
+        if char not in ['X', 'x', 'O', 'O']:
+            raise ValueError("Invalid character (X or O)")
+        elif place not in range(1, 10):
+            raise ValueError("Invalid place (1-9)")
+        elif self._board[place-1] != ' ':
+            raise IndexError("Another character is on this place")
+        else:
+            self._board[place-1] = char.upper()
 
     def check_win(self):
         lines = [

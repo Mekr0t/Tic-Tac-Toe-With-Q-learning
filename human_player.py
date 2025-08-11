@@ -64,10 +64,10 @@ def play_vs_agent():
                     board.place_char(human_char, move)
                     board.print_board()
                     current_player = 'agent'
-                except (ValueError, IndexError):
+                except ValueError:
                     print("Invalid input! Enter a number 1-9.")
                     continue
-                except ValueError as e:
+                except IndexError as e:
                     print(f"Invalid move: {e}")
                     continue
             else:
@@ -98,6 +98,9 @@ def play_vs_agent():
         if play_again != 'y':
             break
 
+        human_char, agent.player_char, agent.opponent_char = agent.player_char, human_char, agent.player_char
+        human_first = not human_first
+
     print(f"\nFinal Score:")
     print(f"You: {human_wins}")
     print(f"Agent: {agent_wins}")
@@ -105,80 +108,8 @@ def play_vs_agent():
     print("Thanks for playing!")
 
 
-def watch_agent_vs_random():
-    """Watch the agent play against a random player"""
-    from trainer import RandomPlayer
-
-    agent = QLearningAgent(player_char='X')
-    if not agent.load_model('tic_tac_toe_model.pkl'):
-        print("No trained model found! Please run trainer.py first.")
-        return
-
-    opponent = RandomPlayer('O')
-
-    print("Watching agent play against random player...")
-    print("Press Enter to see each move, or 'q' to quit")
-
-    games_played = 0
-    agent_wins = 0
-
-    while True:
-        board = Board()
-        print(f"\n--- Game {games_played + 1} ---")
-        board.print_board()
-
-        current_player = agent  # Agent goes first as X
-
-        while board.check_win() is None:
-            if current_player == agent:
-                action = agent.make_move(board, training=False)
-                print(f"Agent plays position {action + 1 if action is not None else 'None'}")
-            else:
-                action = opponent.make_move(board)
-                print(f"Random plays position {action + 1 if action is not None else 'None'}")
-
-            board.print_board()
-
-            # Switch players
-            current_player = opponent if current_player == agent else agent
-
-            # Wait for user input
-            user_input = input("Press Enter for next move (or 'q' to quit): ").strip()
-            if user_input.lower() == 'q':
-                return
-
-        # Game ended
-        result = board.check_win()
-        games_played += 1
-
-        if result == agent.player_char:
-            agent_wins += 1
-            print("Agent wins!")
-        elif result == 0:
-            print("Draw!")
-        else:
-            print("Random player wins!")
-
-        print(f"Agent win rate so far: {agent_wins / games_played:.3f}")
-
-        continue_watching = input("Watch another game? (y/n): ").strip().lower()
-        if continue_watching != 'y':
-            break
-
-
 def main():
-    print("Tic-Tac-Toe with Q-Learning Agent")
-    print("1. Play against the agent")
-    print("2. Watch agent vs random player")
-
-    choice = input("Choose option (1 or 2): ").strip()
-
-    if choice == '1':
-        play_vs_agent()
-    elif choice == '2':
-        watch_agent_vs_random()
-    else:
-        print("Invalid choice!")
+    play_vs_agent()
 
 
 if __name__ == '__main__':

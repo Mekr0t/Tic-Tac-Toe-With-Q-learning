@@ -1,0 +1,22 @@
+# Q-learning hyper-parameters
+q_agent:
+  learning_rate: 0.1
+  discount_factor: 0.9
+  epsilon_start: 0.3
+  epsilon_decay: 0.995
+  epsilon_min: 0.01
+
+# Training schedules
+training:
+  against_random:
+    games: 20000
+    print_interval: 1000
+  against_minimax:
+    games: 5000
+    print_interval: 500
+  against_selfplay:
+    games: 5000
+    print_interval: 1000
+  all_difficulties:
+    games: 5000
+    print_interval: 1000

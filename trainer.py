@@ -15,6 +15,12 @@ from minimax import MinimaxPlayer, ImperfectMinimaxPlayer
 from random_player import RandomPlayer
 from game_logic import Board
 
+import yaml
+import pathlib
+
+_CONFIG_PATH = pathlib.Path(__file__).with_name("config.yaml")
+_config = yaml.safe_load(_CONFIG_PATH.read_text())
+
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
 # --------------------------------------------------------------------------- #
@@ -81,15 +87,18 @@ def _run_games(
             )
 
 
-def _train_against_random(agent: QLearningAgent, num_games: int, print_interval: int = 1000) -> None:
+def _train_against_random(agent: QLearningAgent, num_games: int,
+                          print_interval: int = _config["training"]["against_random"]["print_interval"]) -> None:
     _run_games(agent, RandomPlayer, num_games, print_interval)
 
 
-def _train_against_minimax(agent: QLearningAgent, difficulty: str, num_games: int, print_interval: int = 500) -> None:
+def _train_against_minimax(agent: QLearningAgent, difficulty: str, num_games: int,
+                           print_interval: int = _config["training"]["against_minimax"]["print_interval"]) -> None:
     _run_games(agent, lambda c: MinimaxPlayer(c, difficulty=difficulty), num_games, print_interval)
 
 
-def _train_self_play(agent1: QLearningAgent, agent2: QLearningAgent, num_games: int, print_interval: int = 500) -> None:
+def _train_self_play(agent1: QLearningAgent, agent2: QLearningAgent, num_games: int,
+                     print_interval: int = _config["training"]["against_selfplay"]["print_interval"]) -> None:
     """Self-play between two *mutable* agents."""
     for game in range(num_games):
         agent1.set_player_char("X" if game % 2 == 0 else "O")
@@ -129,7 +138,9 @@ def _train_self_play(agent1: QLearningAgent, agent2: QLearningAgent, num_games: 
             )
 
 
-def _train_against_all_difficulties(agent: QLearningAgent, num_games: int, print_interval: int = 500) -> None:
+def _train_against_all_difficulties(agent: QLearningAgent, num_games: int,
+                                    print_interval: int = _config["training"]["all_difficulties"]["print_interval"]
+                                    ) -> None:
     """Randomly rotate through all minimax levels + random."""
     difficulties = ["random", "easy", "medium", "hard", "perfect"]
 
@@ -208,12 +219,23 @@ def main() -> None:
 
     choice = _choice("Select mode:", menu)
 
-    agent = QLearningAgent(player_char="X", learning_rate=0.1, discount_factor=0.9, epsilon=0.3)
-    agent2 = QLearningAgent(player_char="O", learning_rate=0.1, discount_factor=0.9, epsilon=0.3)
+    agent = QLearningAgent(
+        player_char="X",
+        learning_rate=_config["q_agent"]["learning_rate"],
+        discount_factor=_config["q_agent"]["discount_factor"],
+        epsilon=_config["q_agent"]["epsilon_start"],
+    )
+
+    agent2 = QLearningAgent(
+        player_char="O",
+        learning_rate=_config["q_agent"]["learning_rate"],
+        discount_factor=_config["q_agent"]["discount_factor"],
+        epsilon=_config["q_agent"]["epsilon_start"],
+    )
 
     if choice == "1":
         mng.load_model_for_agent(agent)
-        _train_against_random(agent, num_games=20_000)
+        _train_against_random(agent, num_games=_config["training"]["against_random"]["games"])
         mng.save_model_from_agent(agent)
 
     elif choice == "2":
@@ -222,7 +244,7 @@ def main() -> None:
             {"1": "easy", "2": "medium", "3": "hard", "4": "perfect"},
         )
         mng.load_model_for_agent(agent)
-        _train_against_minimax(agent, difficulty=diff, num_games=5000)
+        _train_against_minimax(agent, difficulty=diff, num_games=_config["training"]["against_minimax"]["games"])
         mng.save_model_from_agent(agent)
 
     elif choice == "3":
@@ -232,7 +254,7 @@ def main() -> None:
         print("\nLoading model for second agent...")
         mng.load_model_for_agent(agent2)
 
-        _train_self_play(agent, agent2, num_games=100_000, print_interval=1000)
+        _train_self_play(agent, agent2, num_games=_config["training"]["against_selfplay"]["games"])
 
         print("\nSaving model for first agent...")
         mng.save_model_from_agent(agent)
@@ -242,7 +264,7 @@ def main() -> None:
 
     elif choice == "4":
         mng.load_model_for_agent(agent)
-        _train_against_all_difficulties(agent, num_games=10_000)
+        _train_against_all_difficulties(agent, num_games=_config["training"]["all_difficulties"]["games"])
         mng.save_model_from_agent(agent)
 
     elif choice == "9":

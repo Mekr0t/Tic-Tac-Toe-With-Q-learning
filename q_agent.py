@@ -13,16 +13,22 @@ from typing import Dict, List, Optional
 
 from game_logic import Board
 
+import yaml
+import pathlib
+
+_CONFIG_PATH = pathlib.Path(__file__).with_name("config.yaml")
+_config = yaml.safe_load(_CONFIG_PATH.read_text())
+
 __all__ = ["QLearningAgent"]
 
 # --------------------------------------------------------------------------- #
 # Constants                                                                   #
 # --------------------------------------------------------------------------- #
-DEFAULT_ALPHA = 0.1
-DEFAULT_GAMMA = 0.9
-DEFAULT_EPS = 0.1
-EPS_DECAY = 0.995
-EPS_MIN = 0.01
+DEFAULT_ALPHA = _config["q_agent"]["learning_rate"]
+DEFAULT_GAMMA = _config["q_agent"]["discount_factor"]
+DEFAULT_EPS = _config["q_agent"]["epsilon_start"]
+EPS_DECAY = _config["q_agent"]["epsilon_decay"]
+EPS_MIN = _config["q_agent"]["epsilon_min"]
 
 
 # --------------------------------------------------------------------------- #

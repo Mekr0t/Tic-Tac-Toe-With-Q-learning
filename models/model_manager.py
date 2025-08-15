@@ -1,116 +1,128 @@
+"""
+model_manager.py
+Utilities for saving / loading / deleting pickled agents.
+"""
+
+from __future__ import annotations
+
 import os
-import datetime
+from datetime import datetime
+from typing import List, Optional
+
+from agents.q_agent import QLearningAgent  # adjust if your agent lives elsewhere
+
+# --------------------------------------------------------------------------- #
+# Constants                                                                   #
+# --------------------------------------------------------------------------- #
+MODEL_DIR = "models"
+PKL_EXT = ".pkl"
 
 
-MODEL_DIR = 'models/'
+# --------------------------------------------------------------------------- #
+# Helpers                                                                     #
+# --------------------------------------------------------------------------- #
+def _model_dir() -> str:
+    """Ensure directory exists and return absolute path."""
+    os.makedirs(MODEL_DIR, exist_ok=True)
+    return MODEL_DIR
 
 
-def save_model_from_agent(agent):
-    choice = input("\nDo you want to save this model (y/n): ").strip()
+def _list_models() -> List[str]:
+    """Return all *.pkl files in MODEL_DIR (without paths)."""
+    return [f for f in os.listdir(_model_dir()) if f.endswith(PKL_EXT)]
 
-    if choice.upper() == 'Y' or choice.upper() == 'YES':
-        filename = input("Enter name of model: ").strip()
 
-        if filename == '':
-            timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            filename = f"model_{timestamp}.pkl"
-        else:
-            filename = f"{filename}.pkl"
-
-        full_path = os.path.join(MODEL_DIR, filename)
-        os.makedirs(MODEL_DIR, exist_ok=True)
-
-        agent.save_model(full_path)
-
-    if choice.upper() == 'N' or choice.upper() == 'NO':
+# --------------------------------------------------------------------------- #
+# Public API                                                                  #
+# --------------------------------------------------------------------------- #
+def save_model_from_agent(agent: QLearningAgent) -> None:
+    """Prompt user to save the given agent."""
+    choice = input("\nDo you want to save this model? [y/n]: ").strip().lower()
+    if choice not in {"y", "yes"}:
         print("\nModel was not saved!\n")
-
-
-def load_model_for_agent(agent):
-    if not os.path.exists(MODEL_DIR):
-        print(f"\nModel directory '{MODEL_DIR}' does not exist.")
         return
 
-    model_files = [f for f in os.listdir(MODEL_DIR) if f.endswith('.pkl')]
-    if not model_files:
+    filename = input("Enter model name (leave blank for auto): ").strip()
+    if not filename:
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"model_{timestamp}"
+    filename += PKL_EXT
+
+    full_path = os.path.join(_model_dir(), filename)
+    agent.save_model(full_path)
+
+
+def load_model_for_agent(agent: QLearningAgent) -> bool:
+    """Prompt user to load a model into the given agent."""
+    files = _list_models()
+    if not files:
         print(f"\nNo model files found in '{MODEL_DIR}'.")
-        return
+        return False
 
     print("\nAvailable models:")
-    for i, file in enumerate(model_files, 1):
-        print(f"{i}. {file}")
+    for idx, name in enumerate(files, 1):
+        print(f"{idx}. {name}")
 
-    while True:
-        try:
-            choice = int(input("\nEnter the number of the model to load (0 to skip): "))
-            if choice == 0:
-                print("\nNo model loaded. Agent will start fresh.")
-                return False
-            elif 1 <= choice <= len(model_files):
-                selected_file = model_files[choice - 1]
-                full_path = os.path.join(MODEL_DIR, selected_file)
-                if agent.load_model(full_path):
-                    print(f"\nSuccessfully loaded model: {selected_file}")
-                    return True
-                else:
-                    print(f"\nFailed to load model: {selected_file}")
-                return False
-            else:
-                print(f"\nPlease enter a number between 0 and {len(model_files)}.")
-        except ValueError:
-            print("\nPlease enter a valid number.")
+    try:
+        choice = int(input("\nEnter number to load (0 to skip): "))
+    except ValueError:
+        print("Please enter a valid number.")
+        return False
+
+    if choice == 0:
+        print("\nNo model loaded. Agent will start fresh.")
+        return False
+
+    if 1 <= choice <= len(files):
+        full_path = os.path.join(_model_dir(), files[choice - 1])
+        success = agent.load_model(full_path)
+        if success:
+            print(f"\nLoaded model: {files[choice - 1]}")
+        return success
+
+    print(f"\nPlease enter a number between 0 and {len(files)}.")
+    return False
 
 
-def delete_model(model_name=None):
-
-    if not os.path.exists(MODEL_DIR):
-        print(f"\nModel directory '{MODEL_DIR}' does not exist.")
+def delete_model(model_name: Optional[str] = None) -> None:
+    """Delete a specific model or prompt the user to choose one."""
+    files = _list_models()
+    if not files:
+        print(f"No model files found in '{MODEL_DIR}'.")
         return
 
-    if model_name is not None:
-        full_path = os.path.join(MODEL_DIR, model_name)
-        if os.path.exists(full_path):
-            confirm = input(f"Are you sure you want to delete {model_name}? (y/n): ").lower()
-            if confirm == 'y':
-                try:
-                    os.remove(full_path)
-                    print(f"Deleted model: {model_name}")
-                except Exception as e:
-                    print(f"Error deleting model: {e}")
-            else:
-                print("Deletion canceled.")
-        else:
-            print(f"Model '{model_name}' not found.")
-    else:
-        model_files = [f for f in os.listdir(MODEL_DIR) if f.endswith('.pkl')]
-        if not model_files:
-            print(f"No model files found in '{MODEL_DIR}'.")
+    if model_name is None:
+        print("Available models:")
+        for idx, name in enumerate(files, 1):
+            print(f"{idx}. {name}")
+
+        try:
+            choice = int(input("Enter number to delete (0 to cancel): "))
+        except ValueError:
+            print("Please enter a valid number.")
             return
 
-        print("Available models:")
-        for i, file in enumerate(model_files, 1):
-            print(f"{i}. {file}")
+        if choice == 0:
+            print("Deletion canceled.")
+            return
 
-        while True:
-            try:
-                choice = int(input("Enter the number of the model to delete (0 to cancel): "))
-                if choice == 0:
-                    print("No model deleted.")
-                    return
-                elif 1 <= choice <= len(model_files):
-                    selected_file = model_files[choice - 1]
-                    full_path = os.path.join(MODEL_DIR, selected_file)
-                    confirm = input(f"Are you sure you want to delete {selected_file}? (y/n): ").lower()
-                    if confirm == 'y':
-                        try:
-                            os.remove(full_path)
-                            print(f"Deleted model: {selected_file}")
-                        except Exception as e:
-                            print(f"Error deleting model: {e}")
-                    else:
-                        print("Deletion canceled.")
-                    return
-                else:
-                    print(f"Please enter a number between 0 and {len(model_files)}.")
-            except ValueError:
-                print("Please enter a valid number.")
+        if 1 <= choice <= len(files):
+            model_name = files[choice - 1]
+        else:
+            print(f"Please enter a number between 0 and {len(files)}.")
+            return
+
+    full_path = os.path.join(_model_dir(), model_name)
+    if not os.path.exists(full_path):
+        print(f"Model '{model_name}' not found.")
+        return
+
+    confirm = input(f"Delete {model_name}? [y/n]: ").strip().lower()
+    if confirm == "y":
+        try:
+            os.remove(full_path)
+            print(f"Deleted model: {model_name}")
+        except Exception as e:
+            print(f"Error deleting model: {e}")
+    else:
+        print("Deletion canceled.")

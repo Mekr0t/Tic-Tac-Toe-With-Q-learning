@@ -1,58 +1,144 @@
+"""
+game_logic.py
+Core board state and move-handling for a 3×3 Tic-Tac-Toe game.
+Compatible drop-in replacement for earlier game_logic.py
+"""
+
+from __future__ import annotations
+
+from typing import Literal, Tuple, List
+
+Player = Literal["X", "O"]
+CellState = Literal["X", "O", " "]
+BoardState = List[CellState]
+
+# --------------------------------------------------------------------------- #
+# Public constants                                                            #
+# --------------------------------------------------------------------------- #
+WIN_LINES: Tuple[Tuple[int, int, int], ...] = (
+    (0, 1, 2), (3, 4, 5), (6, 7, 8),  # rows
+    (0, 3, 6), (1, 4, 7), (2, 5, 8),  # columns
+    (0, 4, 8), (2, 4, 6),              # diagonals
+)
+
+NUMERIC_ENCODE = {"X": 1, "O": -1, " ": 0}
+NUMERIC_DECODE = {1: "X", -1: "O", 0: " "}  # reverse map, handy for ML
+
+
+class InvalidMoveError(ValueError):
+    """Raised when a move violates game rules."""
+
+
 class Board:
-    def __init__(self):
-        self._board = self.new_board()
+    """
+    Immutable public interface:
+        place_char() mutates internal state (kept for compat),
+        otherwise prefer get_numeric_board() for ML / search.
+    """
 
+    def __init__(self) -> None:
+        self._board: BoardState = [" "] * 9
+
+    # ------------------------------------------------------------------ #
+    # Static helpers                                                     #
+    # ------------------------------------------------------------------ #
     @staticmethod
-    def new_board():
-        return [" " for _ in range(9)]
+    def empty() -> BoardState:
+        """Return a fresh empty board list (static helper)."""
+        return [" "] * 9
 
-    def __str__(self):
-        return str(self._board)
+    # ------------------------------------------------------------------ #
+    # I/O helpers                                                        #
+    # ------------------------------------------------------------------ #
+    def __str__(self) -> str:
+        return "".join(self._board)
 
-    def print_board(self):
-        print("-------------")
-        print(f"| {self._board[0]} | {self._board[1]} | {self._board[2]} |")
-        print("-------------")
-        print(f"| {self._board[3]} | {self._board[4]} | {self._board[5]} |")
-        print("-------------")
-        print(f"| {self._board[6]} | {self._board[7]} | {self._board[8]} |")
-        print("-------------")
+    def pretty(self) -> str:
+        """
+        Human-readable ASCII board, suitable for console or logs.
+        """
+        b = self._board
+        return (
+            "+---+---+---+\n"
+            f"| {b[0]} | {b[1]} | {b[2]} |\n"
+            "+---+---+---+\n"
+            f"| {b[3]} | {b[4]} | {b[5]} |\n"
+            "+---+---+---+\n"
+            f"| {b[6]} | {b[7]} | {b[8]} |\n"
+            "+---+---+---+"
+        )
 
-    def place_char(self, char: str, place: int):
-        if char not in ['X', 'x', 'O', 'O']:
-            raise ValueError("Invalid character (X or O)")
-        elif place not in range(1, 10):
-            raise ValueError("Invalid place (1-9)")
-        elif self._board[place-1] != ' ':
-            raise IndexError("Another character is on this place")
-        else:
-            self._board[place-1] = char.upper()
+    def print_board(self) -> None:
+        """Legacy wrapper; delegates to pretty()."""
+        print(self.pretty())
 
-    def check_win(self):
-        lines = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
-        ]
+    # ------------------------------------------------------------------ #
+    # Core game mechanics                                                #
+    # ------------------------------------------------------------------ #
+    def place_char(self, char: str, place: int) -> None:
+        """
+        Place a mark on the board (1-based index).
 
-        for line in lines:
-            if self._board[line[0]] == self._board[line[1]] == self._board[line[2]] != " ":
-                return self._board[line[0]]
+        Args:
+            char: "X" or "O" (case-insensitive)
+            place: 1–9
 
-        if self.is_full():
-            return 0
+        Raises:
+            ValueError:  invalid char or out-of-range place
+            InvalidMoveError: cell already occupied
+        """
+        char = char.upper()
+        if char not in {"X", "O"}:
+            raise ValueError("Character must be 'X' or 'O'")
+        if not 1 <= place <= 9:
+            raise ValueError("Place must be 1-9")
 
-        return None
+        idx = place - 1
+        if self._board[idx] != " ":
+            raise InvalidMoveError("Cell already occupied")
 
-    def get_board(self):
-        return self._board
+        self._board[idx] = char
 
-    def get_numeric_board(self):
-        numbers = {"X": 1, "O": -1, " ": 0}
-        return [numbers[x] for x in self._board]
+    def check_win(self) -> Player | int | None:
+        """
+        Return:
+            "X" or "O" if that player has won
+            0          if board is full (draw)
+            None       otherwise
+        """
+        for a, b, c in WIN_LINES:
+            if self._board[a] == self._board[b] == self._board[c] != " ":
+                return self._board[a]  # type: ignore[return-value]
 
-    def undo_move(self, move):
+        return 0 if self.is_full() else None
+
+    # ------------------------------------------------------------------ #
+    # Utility / ML helpers                                               #
+    # ------------------------------------------------------------------ #
+    def get_board(self) -> BoardState:
+        """Return a *copy* of the raw board list."""
+        return self._board.copy()
+
+    def get_numeric_board(self) -> List[int]:
+        """
+        Encode the board as ints: 1 = X, -1 = O, 0 = empty.
+        """
+        return [NUMERIC_ENCODE[cell] for cell in self._board]
+
+    def undo_move(self, move: int) -> None:
+        """
+        Revert a 0-based index move (used by search algorithms).
+        """
         self._board[move] = " "
 
-    def is_full(self):
-        return False if " " in self._board else True
+    def is_full(self) -> bool:
+        """True if no empty cell left."""
+        return " " not in self._board
+
+    # ------------------------------------------------------------------ #
+    # Convenience read-only properties                                   #
+    # ------------------------------------------------------------------ #
+    @property
+    def available_moves(self) -> List[int]:
+        """0-based indices of empty cells."""
+        return [i for i, v in enumerate(self._board) if v == " "]

@@ -1,116 +1,124 @@
+"""
+human_player.py
+Let a human play against the trained Q-learning agent in the console.
+"""
+
+from __future__ import annotations
+
+from typing import Dict, Tuple
+
 import models.model_manager as mng
-from game.game_logic import Board
 from agents.q_agent import QLearningAgent
+from game.game_logic import Board
 
 
-def play_vs_agent():
-    """Play tic-tac-toe against the trained Q-learning agent"""
-
-    # Load the trained agent
-    agent = QLearningAgent(player_char='X')
-    if mng.load_model_for_agent(agent) is False:
-        return
-
-    print(f"Loaded trained agent with {agent.games_played} games of experience!")
-    print(f"Agent's training win rate: {agent.get_win_rate():.3f}")
-    print()
-
-    # Choose who plays X and O
-    print("Choose your side:")
-    print("1. You play X (go first)")
-    print("2. You play O (go second)")
-
-    choice = input("Enter choice (1 or 2): ").strip()
-    if choice == '1':
-        human_char = 'X'
-        agent.player_char = 'O'
-        agent.opponent_char = 'X'
-        human_first = True
-    else:
-        human_char = 'O'
-        agent.player_char = 'X'
-        agent.opponent_char = 'O'
-        human_first = False
-
-    print(f"\nYou are {human_char}, Agent is {agent.player_char}")
-    print("Enter positions 1-9 corresponding to:")
-    print("1 | 2 | 3")
-    print("4 | 5 | 6")
-    print("7 | 8 | 9")
-    print()
-
-    # Play multiple games
-    human_wins = 0
-    agent_wins = 0
-    draws = 0
-
+# --------------------------------------------------------------------------- #
+# Utilities                                                                   #
+# --------------------------------------------------------------------------- #
+def _choose_sides() -> Tuple[str, str, bool]:
+    """
+    Prompt user for X or O.
+    Returns (human_char, agent_char, human_goes_first).
+    """
     while True:
-        board = Board()
-        print("New game!")
+        choice = input("\nChoose your side:\n1. You play X (go first)\n2. You play O (go second)\nEnter 1 or 2: ").strip()
+        if choice == "1":
+            return "X", "O", True
+        if choice == "2":
+            return "O", "X", False
+        print("Please enter 1 or 2.")
+
+
+def _prompt_move(board: Board, human_char: str) -> int:
+    """Ask human for a 1-9 move until valid."""
+    while True:
+        try:
+            move = int(input(f"Your move ({human_char}): "))
+            board.place_char(human_char, move)
+            return move
+        except (ValueError, IndexError) as e:
+            print(f"Invalid input: {e}")
+
+
+def _play_single_game(
+    agent: QLearningAgent,
+    human_char: str,
+    human_first: bool,
+) -> str:
+    """
+    Run one game.
+    Returns 'human', 'agent', or 'draw'.
+    """
+    board = Board()
+    current = "human" if human_first else "agent"
+
+    board.print_board()
+    while True:
+        if current == "human":
+            _prompt_move(board, human_char)
+            current = "agent"
+        else:
+            print(f"Agent ({agent.player_char}) is thinking...")
+            agent.make_move(board, training=False)  # deterministic
+            current = "human"
+
         board.print_board()
 
-        # Determine first player
-        if human_first:
-            current_player = 'human'
-        else:
-            current_player = 'agent'
-
-        # Game loop
-        while board.check_win() is None:
-            if current_player == 'human':
-                # Human move
-                try:
-                    move = int(input(f"Your move ({human_char}): "))
-                    board.place_char(human_char, move)
-                    board.print_board()
-                    current_player = 'agent'
-                except ValueError:
-                    print("Invalid input! Enter a number 1-9.")
-                    continue
-                except IndexError as e:
-                    print(f"Invalid move: {e}")
-                    continue
-            else:
-                # Agent move
-                print(f"Agent ({agent.player_char}) is thinking...")
-                action = agent.make_move(board, training=False)  # No exploration during play
-                if action is not None:
-                    print(f"Agent chooses position {action + 1}")
-                    board.print_board()
-                current_player = 'human'
-
-        # Game ended
         result = board.check_win()
-        if result == human_char:
-            print("You won! 🎉")
-            human_wins += 1
-        elif result == agent.player_char:
-            print("Agent won! 🤖")
-            agent_wins += 1
-        else:
-            print("It's a draw! 🤝")
-            draws += 1
+        if result is not None:
+            if result == human_char:
+                return "human"
+            if result == agent.player_char:
+                return "agent"
+            return "draw"
 
-        print(f"\nScore - You: {human_wins}, Agent: {agent_wins}, Draws: {draws}")
 
-        # Play again?
-        play_again = input("\nPlay again? (y/n): ").strip().lower()
-        if play_again != 'y':
+# --------------------------------------------------------------------------- #
+# Main loop                                                                   #
+# --------------------------------------------------------------------------- #
+def play_vs_agent() -> None:
+    """Main CLI loop."""
+    agent = QLearningAgent()
+    if not mng.load_model_for_agent(agent):
+        return
+
+    print(
+        f"\nLoaded agent with {agent.games_played} games of experience "
+        f"(win-rate: {agent.get_win_rate():.3f})\n"
+    )
+    print("Positions 1-9:")
+    print("1 | 2 | 3\n4 | 5 | 6\n7 | 8 | 9\n")
+
+    human_char, agent_char, human_first = _choose_sides()
+    agent.set_player_char(agent_char)
+
+    stats: Dict[str, int] = {"human": 0, "agent": 0, "draw": 0}
+
+    while True:
+        winner = _play_single_game(agent, human_char, human_first)
+        stats[winner] += 1
+
+        print(f"\nScore → You: {stats['human']}  Agent: {stats['agent']}  Draws: {stats['draw']}")
+
+        again = input("\nPlay again? [y/n]: ").strip().lower()
+        if again != "y":
             break
 
-        human_char, agent.player_char, agent.opponent_char = agent.player_char, human_char, agent.player_char
+        # Swap sides for variety
+        human_char, agent_char = agent_char, human_char
+        agent.set_player_char(agent_char)
         human_first = not human_first
 
-    print(f"\nFinal Score:")
-    print(f"You: {human_wins}")
-    print(f"Agent: {agent_wins}")
-    print(f"Draws: {draws}")
-    print("Thanks for playing!")
+    print("\nThanks for playing!")
 
 
-def main():
+# --------------------------------------------------------------------------- #
+# Entry point                                                                 #
+# --------------------------------------------------------------------------- #
+if __name__ == "__main__":
+    import random, os, sys
+
+    random.seed(42)  # deterministic
+    os.environ["PYTHONHASHSEED"] = "42"
+
     play_vs_agent()
-
-
-if __name__ == '__main__':
-    main()

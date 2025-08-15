@@ -20,3 +20,4 @@ training:
   all_difficulties:
     games: 5000
     print_interval: 1000
+  replay_buffer_size: 200_000

@@ -15,6 +15,7 @@ from minimax import MinimaxPlayer, ImperfectMinimaxPlayer
 from random_player import RandomPlayer
 from game_logic import Board
 from utils import get_logger
+from replay_buffer import DiskReplayBuffer
 
 import yaml
 import pathlib
@@ -42,6 +43,9 @@ def _run_games(
     Generic training loop.
     `make_opponent` is a callable that returns an opponent when given its char.
     """
+
+    buffer = DiskReplayBuffer(maxlen=_config["training"]["replay_buffer_size"])
+
     for game in range(num_games):
         # Alternate starting order and symbols
         agent.set_player_char("X" if game % 2 == 0 else "O")
@@ -70,6 +74,8 @@ def _run_games(
         result = board.check_win()
         agent.update_stats(result)
         final_reward = agent.get_reward(result)
+        # push the entire trajectory to the buffer
+        buffer.extend(states_buffer)
 
         for i, (s, a) in enumerate(reversed(states_buffer)):
             discounted = final_reward * (agent.discount_factor ** i)

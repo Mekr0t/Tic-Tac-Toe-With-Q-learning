@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from typing import Dict, Tuple
 
-import models.model_manager as mng
-from agents.q_agent import QLearningAgent
-from game.game_logic import Board
+import model_manager as mng
+from q_agent import QLearningAgent
+from game_logic import Board
 
 
 # --------------------------------------------------------------------------- #
@@ -116,7 +116,7 @@ def play_vs_agent() -> None:
 # Entry point                                                                 #
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
-    import random, os, sys
+    import random, os
 
     random.seed(42)  # deterministic
     os.environ["PYTHONHASHSEED"] = "42"

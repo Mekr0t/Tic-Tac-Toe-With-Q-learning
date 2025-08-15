@@ -9,9 +9,9 @@ import os
 import pickle
 import random
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
-from game.game_logic import Board
+from game_logic import Board
 
 __all__ = ["QLearningAgent"]
 

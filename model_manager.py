@@ -9,7 +9,7 @@ import os
 from datetime import datetime
 from typing import List, Optional
 
-from agents.q_agent import QLearningAgent  # adjust if your agent lives elsewhere
+from q_agent import QLearningAgent  # adjust if your agent lives elsewhere
 
 # --------------------------------------------------------------------------- #
 # Constants                                                                   #

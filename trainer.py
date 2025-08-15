@@ -7,14 +7,13 @@ Compatible with the original q_agent.py without any modifications.
 
 from __future__ import annotations
 
-import random
 from typing import List, Tuple, Callable
 
-import models.model_manager as mng
-from agents.q_agent import QLearningAgent
-from algorithms.minimax import MinimaxPlayer, ImperfectMinimaxPlayer
-from algorithms.random_player import RandomPlayer
-from game.game_logic import Board
+import model_manager as mng
+from q_agent import QLearningAgent
+from minimax import MinimaxPlayer, ImperfectMinimaxPlayer
+from random_player import RandomPlayer
+from game_logic import Board
 
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
@@ -266,7 +265,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    import random, os, sys
+    import random, os
 
     random.seed(42)  # deterministic
     os.environ["PYTHONHASHSEED"] = "42"

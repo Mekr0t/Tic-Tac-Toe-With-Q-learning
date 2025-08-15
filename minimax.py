@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import math
 import random
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from game.game_logic import Board  # forward ref to avoid circular imports
+    from game_logic import Board  # forward ref to avoid circular imports
 
 # --------------------------------------------------------------------------- #
 # Configuration constants                                                     #
@@ -197,8 +197,8 @@ class ImperfectMinimaxPlayer(MinimaxPlayer):
 # Simple self-test (run `python -m algorithms.minimax`)                      #
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
-    from game.game_logic import Board
-    from algorithms.random_player import RandomPlayer
+    from game_logic import Board
+    from random_player import RandomPlayer
 
     def _bench() -> None:
         for diff, depth in DEPTH_MAP.items():

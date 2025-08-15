@@ -11,12 +11,12 @@ import random
 from collections import defaultdict
 from typing import Dict, List, Optional
 
-from game_logic import Board
+from .game_logic import Board
 
 import yaml
 import pathlib
 
-_CONFIG_PATH = pathlib.Path(__file__).with_name("config.yaml")
+_CONFIG_PATH = pathlib.Path(__file__).parents[2] / "config.yaml"
 _config = yaml.safe_load(_CONFIG_PATH.read_text())
 
 __all__ = ["QLearningAgent"]

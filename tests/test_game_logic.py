@@ -1,5 +1,5 @@
 import pytest
-from game_logic import Board
+from src.tictactoe.game_logic import Board
 
 
 def test_horizontal_win():

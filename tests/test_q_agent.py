@@ -1,6 +1,5 @@
 import pytest
-from game_logic import Board
-from q_agent import QLearningAgent
+from src.tictactoe.q_agent import QLearningAgent
 
 
 def test_bellman_update():

@@ -1,0 +1,19 @@
+[build-system]
+requires      = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "t3-qlearn"
+version         = "0.1.0"
+description     = "Q-learning Tic-Tac-Toe trainer & player"
+readme          = "README.md"
+requires-python = ">=3.10"
+dependencies    = ["pyyaml"]
+
+[project.scripts]
+t3-train = "tictactoe.trainer:main"
+t3-play  = "tictactoe.human_player:play_vs_agent"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["tictactoe*"]

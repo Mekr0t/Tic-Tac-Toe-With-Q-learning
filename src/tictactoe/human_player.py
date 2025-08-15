@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from typing import Dict, Tuple
 
-import model_manager as mng
-from q_agent import QLearningAgent
-from game_logic import Board
-from utils import get_logger
+from . import model_manager as mng
+from .q_agent import QLearningAgent
+from .game_logic import Board
+from .utils import get_logger
 
 log = get_logger(__name__)
 

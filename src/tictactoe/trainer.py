@@ -9,18 +9,18 @@ from __future__ import annotations
 
 from typing import List, Tuple, Callable
 
-import model_manager as mng
-from q_agent import QLearningAgent
-from minimax import MinimaxPlayer, ImperfectMinimaxPlayer
-from random_player import RandomPlayer
-from game_logic import Board
-from utils import get_logger
-from replay_buffer import DiskReplayBuffer
+from . import model_manager as mng
+from .q_agent import QLearningAgent
+from .minimax import MinimaxPlayer, ImperfectMinimaxPlayer
+from .random_player import RandomPlayer
+from .game_logic import Board
+from .utils import get_logger
+from .replay_buffer import DiskReplayBuffer
 
 import yaml
 import pathlib
 
-_CONFIG_PATH = pathlib.Path(__file__).with_name("config.yaml")
+_CONFIG_PATH = pathlib.Path(__file__).parents[2] / "config.yaml"
 _config = yaml.safe_load(_CONFIG_PATH.read_text())
 
 

@@ -6,35 +6,39 @@ Utilities for saving / loading / deleting pickled agents.
 from __future__ import annotations
 
 import os
+import pathlib
+
 from datetime import datetime
 from typing import List, Optional
-
-from q_agent import QLearningAgent  # adjust if your agent lives elsewhere
+from .q_agent import QLearningAgent  # adjust if your agent lives elsewhere
 
 # --------------------------------------------------------------------------- #
 # Constants                                                                   #
 # --------------------------------------------------------------------------- #
-MODEL_DIR = "models"
+MODEL_DIR = pathlib.Path(__file__).parents[2] / "models"
 PKL_EXT = ".pkl"
 
 
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
 # --------------------------------------------------------------------------- #
-def _model_dir() -> str:
-    """Ensure directory exists and return absolute path."""
-    os.makedirs(MODEL_DIR, exist_ok=True)
-    return MODEL_DIR
-
 
 def _list_models() -> List[str]:
     """Return all *.pkl files in MODEL_DIR (without paths)."""
     return [f for f in os.listdir(_model_dir()) if f.endswith(PKL_EXT)]
 
 
+def _model_dir() -> pathlib.Path:
+    """Ensure directory exists and return absolute path."""
+
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    return MODEL_DIR
+
 # --------------------------------------------------------------------------- #
 # Public API                                                                  #
 # --------------------------------------------------------------------------- #
+
+
 def save_model_from_agent(agent: QLearningAgent) -> None:
     """Prompt user to save the given agent."""
     choice = input("\nDo you want to save this model? [y/n]: ").strip().lower()
@@ -48,7 +52,7 @@ def save_model_from_agent(agent: QLearningAgent) -> None:
         filename = f"model_{timestamp}"
     filename += PKL_EXT
 
-    full_path = os.path.join(_model_dir(), filename)
+    full_path = _model_dir() / filename
     agent.save_model(full_path)
 
 
@@ -74,7 +78,7 @@ def load_model_for_agent(agent: QLearningAgent) -> bool:
         return False
 
     if 1 <= choice <= len(files):
-        full_path = os.path.join(_model_dir(), files[choice - 1])
+        full_path = _model_dir() / files[choice - 1]
         success = agent.load_model(full_path)
         if success:
             print(f"\nLoaded model: {files[choice - 1]}")
@@ -112,7 +116,7 @@ def delete_model(model_name: Optional[str] = None) -> None:
             print(f"Please enter a number between 0 and {len(files)}.")
             return
 
-    full_path = os.path.join(_model_dir(), model_name)
+    full_path = _model_dir() / model_name
     if not os.path.exists(full_path):
         print(f"Model '{model_name}' not found.")
         return

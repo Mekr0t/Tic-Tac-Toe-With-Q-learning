@@ -9,7 +9,7 @@ import random
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from game_logic import Board
+    from .game_logic import Board
 
 
 class RandomPlayer:

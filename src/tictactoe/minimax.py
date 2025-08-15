@@ -11,7 +11,7 @@ import random
 from typing import Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from game_logic import Board  # forward ref to avoid circular imports
+    from tictactoe.game_logic import Board  # forward ref to avoid circular imports
 
 # --------------------------------------------------------------------------- #
 # Configuration constants                                                     #
@@ -197,7 +197,7 @@ class ImperfectMinimaxPlayer(MinimaxPlayer):
 # Simple self-test (run `python -m algorithms.minimax`)                      #
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
-    from game_logic import Board
+    from src.tictactoe.game_logic import Board
     from random_player import RandomPlayer
 
     def _bench() -> None:

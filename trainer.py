@@ -14,12 +14,16 @@ from q_agent import QLearningAgent
 from minimax import MinimaxPlayer, ImperfectMinimaxPlayer
 from random_player import RandomPlayer
 from game_logic import Board
+from utils import get_logger
 
 import yaml
 import pathlib
 
 _CONFIG_PATH = pathlib.Path(__file__).with_name("config.yaml")
 _config = yaml.safe_load(_CONFIG_PATH.read_text())
+
+
+log = get_logger(__name__)
 
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
@@ -28,11 +32,11 @@ PlayerFactory = Callable[[str], object]  # opponent generator with a given char
 
 
 def _run_games(
-    agent: QLearningAgent,
-    make_opponent: PlayerFactory,
-    num_games: int,
-    print_interval: int,
-    decay_each: int = 100,
+        agent: QLearningAgent,
+        make_opponent: PlayerFactory,
+        num_games: int,
+        print_interval: int,
+        decay_each: int = 100,
 ) -> None:
     """
     Generic training loop.
@@ -79,12 +83,8 @@ def _run_games(
         # Logging
         if (game + 1) % print_interval == 0:
             stats = agent.get_stats()
-            print(
-                f"Game {game + 1}: "
-                f"Win-rate={stats['win_rate']:.3f}, "
-                f"ε={agent.epsilon:.3f}, "
-                f"|Q|={len(agent.q_table)}"
-            )
+            log.info("Game %d: win-rate=%.3f, ε=%.3f, |Q|=%d",
+                     game + 1, stats['win_rate'], agent.epsilon, len(agent.q_table))
 
 
 def _train_against_random(agent: QLearningAgent, num_games: int,
@@ -131,11 +131,8 @@ def _train_self_play(agent1: QLearningAgent, agent2: QLearningAgent, num_games: 
                 agent.decay_epsilon()
 
         if (game + 1) % print_interval == 0:
-            print(
-                f"Game {game + 1}: "
-                f"A1-win={agent1.get_win_rate():.3f}, "
-                f"A2-win={agent2.get_win_rate():.3f}"
-            )
+            log.info("Game %d: A1-win=%.3f, A2-win=%.3f",
+                     game + 1, agent1.get_win_rate(), agent2.get_win_rate())
 
 
 def _train_against_all_difficulties(agent: QLearningAgent, num_games: int,
@@ -183,10 +180,8 @@ def evaluate_agent_vs_all_opponents(agent: QLearningAgent, games_per_opponent: i
             agent.update_stats(board.check_win())
 
         results[name] = agent.get_stats()
-        print(
-            f"{name:<20} | win-rate={results[name]['win_rate']:.3f} "
-            f"({results[name]['wins']}W/{results[name]['losses']}L/{results[name]['draws']}D)"
-        )
+        log.info("%-20s | win-rate=%.3f (%dW/%dL/%dD)", name, results[name]['win_rate'], results[name]['wins'],
+                 results[name]['losses'], results[name]['draws'])
 
     # restore original counters
     for k, v in backup.items():

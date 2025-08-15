@@ -10,7 +10,9 @@ from typing import Dict, Tuple
 import model_manager as mng
 from q_agent import QLearningAgent
 from game_logic import Board
+from utils import get_logger
 
+log = get_logger(__name__)
 
 # --------------------------------------------------------------------------- #
 # Utilities                                                                   #
@@ -82,10 +84,7 @@ def play_vs_agent() -> None:
     if not mng.load_model_for_agent(agent):
         return
 
-    print(
-        f"\nLoaded agent with {agent.games_played} games of experience "
-        f"(win-rate: {agent.get_win_rate():.3f})\n"
-    )
+    log.info("\nLoaded agent with %d games of experience (win-rate: %.3f)\n", agent.games_played, agent.get_win_rate())
     print("Positions 1-9:")
     print("1 | 2 | 3\n4 | 5 | 6\n7 | 8 | 9\n")
 

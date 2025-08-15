@@ -48,7 +48,7 @@ class QLearningAgent:
         self.epsilon: float = epsilon
 
         # Q-table:  state_key + "_" + action  →  float
-        self.q_table: defaultdict[str, float] = defaultdict(float)
+        self.q_table: defaultdict[tuple[tuple[int, ...], int], float] = defaultdict(float)
 
         # Statistics
         self.games_played: int = 0
@@ -182,9 +182,8 @@ class QLearningAgent:
         return best_move or random.choice(avail)
 
     @staticmethod
-    def _make_key(state: List[int], action: int) -> str:
-        """Create unique key for (state, action)."""
-        return f"{''.join(map(str, state))}_{action}"
+    def _make_key(state: tuple[int, ...], action: int) -> tuple[tuple[int, ...], int]:
+        return (state, action)
 
     @staticmethod
     def _board_from_numeric(state: List[int]) -> Board:

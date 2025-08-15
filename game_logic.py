@@ -119,11 +119,11 @@ class Board:
         """Return a *copy* of the raw board list."""
         return self._board.copy()
 
-    def get_numeric_board(self) -> List[int]:
+    def get_numeric_board(self) -> tuple[int, ...]:
         """
-        Encode the board as ints: 1 = X, -1 = O, 0 = empty.
+                Encode the board as ints: 1 = X, -1 = O, 0 = empty.
         """
-        return [NUMERIC_ENCODE[cell] for cell in self._board]
+        return tuple(NUMERIC_ENCODE[cell] for cell in self._board)
 
     def undo_move(self, move: int) -> None:
         """

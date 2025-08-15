@@ -47,7 +47,7 @@ def _run_games(
         # Play game
         while board.check_win() is None:
             if current is agent:
-                state = board.get_numeric_board().copy()
+                state = board.get_numeric_board()
                 action = agent.make_move(board, training=True)
                 if action is not None:
                     states_buffer.append((state, action))
@@ -101,7 +101,7 @@ def _train_self_play(agent1: QLearningAgent, agent2: QLearningAgent, num_games: 
         current, other = (agent1, agent2) if agent1.player_char == "X" else (agent2, agent1)
 
         while board.check_win() is None:
-            state = board.get_numeric_board().copy()
+            state = board.get_numeric_board()
             action = current.make_move(board, training=True)
             if action is not None:
                 (states1 if current is agent1 else states2).append((state, action))
